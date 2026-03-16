@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LinkedIn Karussell Generator</title>
+  <link rel="stylesheet" href="/static/main.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <img src="/static/neam_logo.svg" alt="neam" class="header-logo">
+      <div class="tagline">LinkedIn Karussell Generator</div>
+    </div>
+
+    <div class="steps">
+      <div class="step active" id="step-1">① Thema eingeben</div>
+      <div class="step" id="step-2">② Rückfragen beantworten</div>
+      <div class="step" id="step-3">③ PDF generieren</div>
+    </div>
+
+    <div class="card">
+      <form id="main-form">
+        <div class="field">
+          <label for="topic">Thema</label>
+          <input
+            type="text"
+            id="topic"
+            name="topic"
+            placeholder="z. B. KI im Mittelstand, Burnout-Prävention, Vertrieb 2025 …"
+            required
+          >
+        </div>
+
+        <div class="field">
+          <label for="bullets">Stichpunkte & Kernaussagen</label>
+          <textarea
+            id="bullets"
+            name="bullets"
+            placeholder="Was soll der Leser mitnehmen? Welche Punkte sind dir wichtig? Gibt es Zahlen, Fakten oder Erfahrungen?"
+            required
+          ></textarea>
+        </div>
+
+        <button type="button" class="btn btn-primary" id="check-btn">
+          <span id="check-btn-text">Weiter → Prüfen</span>
+        </button>
+
+        <!-- Follow-up Sektion (dynamisch befüllt) -->
+        <div id="followup-section">
+          <div class="followup-label">Noch ein paar Infos fehlen …</div>
+          <div id="questions-container"></div>
+
+          <button type="button" class="btn btn-primary" id="recheck-btn" style="margin-top:8px;">
+            <span id="recheck-btn-text">Antworten prüfen</span>
+          </button>
+        </div>
+
+        <!-- Generate Button (erscheint wenn ready) -->
+        <button type="button" class="btn btn-generate" id="generate-btn" style="display:none;">
+          <span id="generate-btn-text">✦ Karussell generieren & PDF laden</span>
+        </button>
+
+        <div class="status" id="status-box"></div>
+      </form>
+    </div>
+  </div>
+
+<script>
+  // ── State ──
+  let extraAnswers = [];   // Antworten auf Rückfragen, gesammelt über Runden
+  let currentQuestions = []; // Aktuelle Fragen
+
+  // ── DOM ──
+  const checkBtn    = document.getElementById('check-btn');
+  const recheckBtn  = document.getElementById('recheck-btn');
+  const generateBtn = document.getElementById('generate-btn');
+  const followupSection = document.getElementById('followup-section');
+  const questionsContainer = document.getElementById('questions-container');
+  const statusBox   = document.getElementById('status-box');
+
+  function setStep(n) {
+    document.querySelectorAll('.step').forEach((el, i) => {
+      el.classList.remove('active', 'done');
+      if (i + 1 < n) el.classList.add('done');
+      if (i + 1 === n) el.classList.add('active');
+    });
+  }
+
+  function showStatus(msg, type = 'info') {
+    statusBox.textContent = msg;
+    statusBox.className = `status ${type}`;
+    statusBox.style.display = 'block';
+  }
+
+  function hideStatus() {
+    statusBox.style.display = 'none';
+  }
+
+  function setLoading(btn, textEl, loading, label) {
+    if (loading) {
+      textEl.innerHTML = '<div class="spinner"></div> ' + label;
+      btn.disabled = true;
+    } else {
+      textEl.textContent = label;
+      btn.disabled = false;
+    }
+  }
+
+  function collectCurrentAnswers() {
+    return currentQuestions.map((q, i) => {
+      const input = document.getElementById(`q-${i}`);
+      return input ? `${q}: ${input.value}` : '';
+    }).filter(Boolean);
+  }
+
+  function renderQuestions(questions) {
+    currentQuestions = questions;
+    questionsContainer.innerHTML = '';
+    questions.forEach((q, i) => {
+      const block = document.createElement('div');
+      block.className = 'question-block field';
+      block.innerHTML = `
+        <div class="question-text">${q}</div>
+        <input type="text" id="q-${i}" placeholder="Deine Antwort …">
+      `;
+      questionsContainer.appendChild(block);
+    });
+    followupSection.style.display = 'block';
+  }
+
+  // ── Check ──
+  async function doCheck(isRecheck = false) {
+    const topic   = document.getElementById('topic').value.trim();
+    const bullets = document.getElementById('bullets').value.trim();
+    if (!topic || !bullets) { showStatus('Bitte Thema und Stichpunkte ausfüllen.', 'error'); return; }
+
+    const btn    = isRecheck ? recheckBtn : checkBtn;
+    const textEl = btn.querySelector('span');
+    const label  = isRecheck ? 'Antworten prüfen' : 'Weiter → Prüfen';
+
+    setLoading(btn, textEl, true, 'Prüfe …');
+    hideStatus();
+    generateBtn.style.display = 'none';
+
+    if (isRecheck) {
+      const newAnswers = collectCurrentAnswers();
+      extraAnswers = extraAnswers.concat(newAnswers);
+    }
+
+    const body = new FormData();
+    body.append('topic', topic);
+    body.append('bullets', bullets);
+    body.append('extra', extraAnswers.join('||'));
+
+    try {
+      const res  = await fetch('/check', { method: 'POST', body });
+      const data = await res.json();
+
+      if (data.error) { showStatus('Fehler: ' + data.error, 'error'); return; }
+
+      if (data.ready) {
+        followupSection.style.display = 'none';
+        checkBtn.style.display = 'none';
+        generateBtn.style.display = 'block';
+        showStatus('Super! Genug Infos – jetzt kannst du das PDF generieren.', 'success');
+        setStep(3);
+      } else {
+        renderQuestions(data.missing_info);
+        showStatus('Beantworte die Fragen, damit das Karussell richtig gut wird.', 'info');
+        setStep(2);
+      }
+    } catch (e) {
+      showStatus('Verbindungsfehler. Bitte nochmal versuchen.', 'error');
+    } finally {
+      setLoading(btn, textEl, false, label);
+    }
+  }
+
+  // ── Generate ──
+  async function doGenerate() {
+    const topic   = document.getElementById('topic').value.trim();
+    const bullets = document.getElementById('bullets').value.trim();
+    const textEl  = document.getElementById('generate-btn-text');
+
+    setLoading(generateBtn, textEl, true, 'Generiere Karussell …');
+    showStatus('Claude erstellt dein Karussell – das dauert ca. 20–30 Sekunden …', 'info');
+
+    const body = new FormData();
+    body.append('topic', topic);
+    body.append('bullets', bullets);
+    body.append('extra', extraAnswers.join('||'));
+
+    try {
+      const res = await fetch('/generate', { method: 'POST', body });
+
+      if (!res.ok) {
+        const data = await res.json();
+        showStatus('Fehler: ' + (data.error || res.statusText), 'error');
+        return;
+      }
+
+      // PDF-Download auslösen
+      const blob = await res.blob();
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = 'linkedin_karussell.pdf';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+
+      showStatus('✓ PDF wurde heruntergeladen! Jetzt auf LinkedIn hochladen.', 'success');
+      setStep(3);
+    } catch (e) {
+      showStatus('Verbindungsfehler beim Generieren. Bitte nochmal versuchen.', 'error');
+    } finally {
+      setLoading(generateBtn, textEl, false, '✦ Nochmal generieren');
+    }
+  }
+
+  checkBtn.addEventListener('click',   () => doCheck(false));
+  recheckBtn.addEventListener('click', () => doCheck(true));
+  generateBtn.addEventListener('click', doGenerate);
+</script>
+</body>
+</html>
