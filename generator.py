@@ -48,6 +48,7 @@ Erstelle ein LinkedIn-Karussell mit genau 6 Slides nach dieser strikten Struktur
 6. CTA: Klare Handlungsaufforderung. Kommentieren, folgen oder teilen.
 
 Schreibe auf Deutsch. Sprache: direkt, klar, professionell aber nicht steif.
+Anrede: Verwende konsequent die formelle Anrede "Sie" – niemals "du" oder "ihr".
 Bullet Points: kurz (max 8 Wörter), aktionsorientiert.
 Hook: maximal 10 Wörter, endet idealerweise mit Fragezeichen oder Ausrufezeichen.
 

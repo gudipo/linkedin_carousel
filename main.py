@@ -1,4 +1,6 @@
+import json
 import os
+from datetime import datetime
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -15,6 +17,19 @@ from renderer import render_to_pdf
 app = FastAPI(title="LinkedIn Karussell Generator")
 
 BASE_DIR = Path(__file__).parent
+LOG_PATH = BASE_DIR / "output" / "usage_log.jsonl"
+
+
+def _log_usage(client: str, topic: str, answers_count: int, pdf_path: Path):
+    entry = {
+        "timestamp": datetime.now().isoformat(timespec="seconds"),
+        "client": client,
+        "topic": topic,
+        "answers_count": answers_count,
+        "pdf_bytes": pdf_path.stat().st_size,
+    }
+    with LOG_PATH.open("a", encoding="utf-8") as f:
+        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
@@ -47,6 +62,7 @@ async def generate(
     topic: str = Form(...),
     bullets: str = Form(...),
     extra: str = Form(""),
+    client: str = Form(""),
 ):
     """
     Generiert das Karussell-PDF und gibt es als Download zurück.
@@ -56,6 +72,7 @@ async def generate(
         slides_json = generate_slides(topic, bullets, extra_answers)
         slides = slides_json["slides"]
         pdf_path = await render_to_pdf(slides)
+        _log_usage(client, topic, len(extra_answers), pdf_path)
         return FileResponse(
             path=pdf_path,
             media_type="application/pdf",

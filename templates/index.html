@@ -22,6 +22,17 @@
     <div class="card">
       <form id="main-form">
         <div class="field">
+          <label for="client">Kunde / Projekt</label>
+          <input
+            type="text"
+            id="client"
+            name="client"
+            placeholder="z. B. Müller GmbH, Projekt Alpha …"
+            required
+          >
+        </div>
+
+        <div class="field">
           <label for="topic">Thema</label>
           <input
             type="text"
@@ -37,7 +48,7 @@
           <textarea
             id="bullets"
             name="bullets"
-            placeholder="Was soll der Leser mitnehmen? Welche Punkte sind dir wichtig? Gibt es Zahlen, Fakten oder Erfahrungen?"
+            placeholder="Was soll der Leser mitnehmen? Welche Punkte sind Ihnen wichtig? Gibt es Zahlen, Fakten oder Erfahrungen?"
             required
           ></textarea>
         </div>
@@ -122,7 +133,7 @@
       block.className = 'question-block field';
       block.innerHTML = `
         <div class="question-text">${q}</div>
-        <input type="text" id="q-${i}" placeholder="Deine Antwort …">
+        <input type="text" id="q-${i}" placeholder="Ihre Antwort …">
       `;
       questionsContainer.appendChild(block);
     });
@@ -163,7 +174,7 @@
         followupSection.style.display = 'none';
         checkBtn.style.display = 'none';
         generateBtn.style.display = 'block';
-        showStatus('Super! Genug Infos – jetzt kannst du das PDF generieren.', 'success');
+        showStatus('Super! Genug Infos – jetzt können Sie das PDF generieren.', 'success');
         setStep(3);
       } else {
         renderQuestions(data.missing_info);
@@ -181,15 +192,17 @@
   async function doGenerate() {
     const topic   = document.getElementById('topic').value.trim();
     const bullets = document.getElementById('bullets').value.trim();
+    const client  = document.getElementById('client').value.trim();
     const textEl  = document.getElementById('generate-btn-text');
 
     setLoading(generateBtn, textEl, true, 'Generiere Karussell …');
-    showStatus('Claude erstellt dein Karussell – das dauert ca. 20–30 Sekunden …', 'info');
+    showStatus('Claude erstellt das Karussell – das dauert ca. 20–30 Sekunden …', 'info');
 
     const body = new FormData();
     body.append('topic', topic);
     body.append('bullets', bullets);
     body.append('extra', extraAnswers.join('||'));
+    body.append('client', client);
 
     try {
       const res = await fetch('/generate', { method: 'POST', body });
