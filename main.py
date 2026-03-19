@@ -1,5 +1,6 @@
 import json
 import os
+import traceback
 from datetime import datetime
 from pathlib import Path
 
@@ -20,16 +21,17 @@ BASE_DIR = Path(__file__).parent
 LOG_PATH = BASE_DIR / "output" / "usage_log.jsonl"
 
 
-def _log_usage(client: str, topic: str, answers_count: int, pdf_path: Path):
+def _log_usage(client: str, topic: str, answers_count: int, pdf_path):
     entry = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
         "client": client,
         "topic": topic,
         "answers_count": answers_count,
-        "pdf_bytes": pdf_path.stat().st_size,
+        "pdf_bytes": Path(pdf_path).stat().st_size,
     }
     with LOG_PATH.open("a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
 
@@ -45,15 +47,12 @@ async def check(
     bullets: str = Form(...),
     extra: str = Form(""),
 ):
-    """
-    Prüft ob der Input ausreicht. Gibt JSON zurück:
-    { "ready": bool, "missing_info": ["Frage 1", ...] }
-    """
     extra_answers = [a.strip() for a in extra.split("||") if a.strip()] if extra else []
     try:
         result = check_input(topic, bullets, extra_answers)
         return JSONResponse(result)
     except Exception as e:
+        traceback.print_exc()
         return JSONResponse({"error": str(e)}, status_code=500)
 
 
@@ -64,9 +63,6 @@ async def generate(
     extra: str = Form(""),
     client: str = Form(""),
 ):
-    """
-    Generiert das Karussell-PDF und gibt es als Download zurück.
-    """
     extra_answers = [a.strip() for a in extra.split("||") if a.strip()] if extra else []
     try:
         slides_json = generate_slides(topic, bullets, extra_answers)
@@ -80,4 +76,5 @@ async def generate(
             background=None,
         )
     except Exception as e:
+        traceback.print_exc()
         return JSONResponse({"error": str(e)}, status_code=500)
