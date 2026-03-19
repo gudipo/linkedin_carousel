@@ -8,6 +8,7 @@ from playwright.async_api import async_playwright
 
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 OUTPUT_DIR = Path(__file__).parent / "output"
+FONTS_CSS_PATH = Path(__file__).parent / "static" / "fonts" / "fonts.css"
 
 jinja_env = Environment(loader=FileSystemLoader(str(TEMPLATES_DIR)))
 
@@ -18,6 +19,7 @@ def _render_slide_html(slide: dict, index: int, total: int, insight_number: int)
         slide=slide,
         index=index,
         total=total,
+        fonts_css_path=FONTS_CSS_PATH,
         insight_number=insight_number,
     )
 
