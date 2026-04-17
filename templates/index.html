@@ -196,28 +196,45 @@
   }
 
   // ── Client-Side PDF ──
+  function loadSlideInIframe(html) {
+    return new Promise((resolve, reject) => {
+      const iframe = document.createElement('iframe');
+      iframe.style.width = '1080px';
+      iframe.style.height = '1080px';
+      iframe.style.border = 'none';
+      iframe.style.position = 'fixed';
+      iframe.style.left = '-9999px';
+      iframe.style.top = '0';
+      document.body.appendChild(iframe);
+
+      iframe.onload = () => {
+        // Fonts im iframe laden lassen
+        const fontsReady = iframe.contentDocument.fonts
+          ? iframe.contentDocument.fonts.ready
+          : Promise.resolve();
+        fontsReady.then(() => {
+          setTimeout(() => resolve(iframe), 500);
+        });
+      };
+      iframe.onerror = reject;
+      iframe.srcdoc = html;
+    });
+  }
+
   async function buildPdfFromHtml(slidesHtml) {
     const { jsPDF } = window.jspdf;
-    // 1080x1080px bei 72 DPI = 381mm x 381mm
-    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [381, 381] });
+    // 1080x1080px = quadratisch
+    const size = 381; // mm bei 72 DPI
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [size, size] });
 
     for (let i = 0; i < slidesHtml.length; i++) {
       showStatus(`PDF wird erstellt … Slide ${i + 1} / ${slidesHtml.length}`, 'info');
 
-      // Slide-HTML in Container rendern
-      const wrapper = document.createElement('div');
-      wrapper.style.width = '1080px';
-      wrapper.style.height = '1080px';
-      wrapper.style.overflow = 'hidden';
-      wrapper.innerHTML = slidesHtml[i];
-      renderArea.appendChild(wrapper);
+      // Slide in iframe laden (rendert vollstaendiges HTML-Dokument korrekt)
+      const iframe = await loadSlideInIframe(slidesHtml[i]);
+      const slideBody = iframe.contentDocument.body;
 
-      // Fonts laden lassen
-      await document.fonts.ready;
-      // Kurz warten damit der Browser alles gerendert hat
-      await new Promise(r => setTimeout(r, 200));
-
-      const canvas = await html2canvas(wrapper, {
+      const canvas = await html2canvas(slideBody, {
         width: 1080,
         height: 1080,
         scale: 2,
@@ -227,10 +244,10 @@
 
       const imgData = canvas.toDataURL('image/jpeg', 0.95);
 
-      if (i > 0) pdf.addPage([381, 381]);
-      pdf.addImage(imgData, 'JPEG', 0, 0, 381, 381);
+      if (i > 0) pdf.addPage([size, size]);
+      pdf.addImage(imgData, 'JPEG', 0, 0, size, size);
 
-      renderArea.removeChild(wrapper);
+      document.body.removeChild(iframe);
     }
 
     return pdf;
@@ -263,13 +280,16 @@
 
       // Client-Side PDF-Erzeugung
       showStatus('Inhalte erhalten – PDF wird im Browser erstellt …', 'info');
+      console.log('Slides erhalten:', data.slides_html.length);
       const pdf = await buildPdfFromHtml(data.slides_html);
+      console.log('PDF erstellt, starte Download');
       pdf.save('linkedin_karussell.pdf');
 
       showStatus('✓ PDF wurde heruntergeladen! Jetzt auf LinkedIn hochladen.', 'success');
       setStep(3);
     } catch (e) {
-      showStatus('Fehler beim Generieren. Bitte nochmal versuchen.', 'error');
+      console.error('Fehler:', e);
+      showStatus('Fehler: ' + e.message, 'error');
     } finally {
       setLoading(generateBtn, textEl, false, '✦ Nochmal generieren');
     }
