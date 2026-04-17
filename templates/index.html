@@ -5,6 +5,9 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>LinkedIn Karussell Generator</title>
   <link rel="stylesheet" href="/static/main.css">
+  <link rel="stylesheet" href="/static/fonts/fonts.css">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.2/jspdf.umd.min.js"></script>
 </head>
 <body>
   <div class="container">
@@ -77,10 +80,13 @@
     </div>
   </div>
 
+  <!-- Versteckter Container fuer Slide-Rendering -->
+  <div id="render-area" style="position:fixed; left:-9999px; top:0;"></div>
+
 <script>
   // ── State ──
-  let extraAnswers = [];   // Antworten auf Rückfragen, gesammelt über Runden
-  let currentQuestions = []; // Aktuelle Fragen
+  let extraAnswers = [];
+  let currentQuestions = [];
 
   // ── DOM ──
   const checkBtn    = document.getElementById('check-btn');
@@ -89,6 +95,7 @@
   const followupSection = document.getElementById('followup-section');
   const questionsContainer = document.getElementById('questions-container');
   const statusBox   = document.getElementById('status-box');
+  const renderArea  = document.getElementById('render-area');
 
   function setStep(n) {
     document.querySelectorAll('.step').forEach((el, i) => {
@@ -188,6 +195,47 @@
     }
   }
 
+  // ── Client-Side PDF ──
+  async function buildPdfFromHtml(slidesHtml) {
+    const { jsPDF } = window.jspdf;
+    // 1080x1080px bei 72 DPI = 381mm x 381mm
+    const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [381, 381] });
+
+    for (let i = 0; i < slidesHtml.length; i++) {
+      showStatus(`PDF wird erstellt … Slide ${i + 1} / ${slidesHtml.length}`, 'info');
+
+      // Slide-HTML in Container rendern
+      const wrapper = document.createElement('div');
+      wrapper.style.width = '1080px';
+      wrapper.style.height = '1080px';
+      wrapper.style.overflow = 'hidden';
+      wrapper.innerHTML = slidesHtml[i];
+      renderArea.appendChild(wrapper);
+
+      // Fonts laden lassen
+      await document.fonts.ready;
+      // Kurz warten damit der Browser alles gerendert hat
+      await new Promise(r => setTimeout(r, 200));
+
+      const canvas = await html2canvas(wrapper, {
+        width: 1080,
+        height: 1080,
+        scale: 2,
+        useCORS: true,
+        logging: false,
+      });
+
+      const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+      if (i > 0) pdf.addPage([381, 381]);
+      pdf.addImage(imgData, 'JPEG', 0, 0, 381, 381);
+
+      renderArea.removeChild(wrapper);
+    }
+
+    return pdf;
+  }
+
   // ── Generate ──
   async function doGenerate() {
     const topic   = document.getElementById('topic').value.trim();
@@ -196,7 +244,7 @@
     const textEl  = document.getElementById('generate-btn-text');
 
     setLoading(generateBtn, textEl, true, 'Generiere Karussell …');
-    showStatus('Claude erstellt das Karussell – das dauert ca. 20–30 Sekunden …', 'info');
+    showStatus('Claude erstellt die Inhalte – das dauert ca. 20–30 Sekunden …', 'info');
 
     const body = new FormData();
     body.append('topic', topic);
@@ -206,28 +254,22 @@
 
     try {
       const res = await fetch('/generate', { method: 'POST', body });
+      const data = await res.json();
 
-      if (!res.ok) {
-        const data = await res.json();
-        showStatus('Fehler: ' + (data.error || res.statusText), 'error');
+      if (data.error) {
+        showStatus('Fehler: ' + data.error, 'error');
         return;
       }
 
-      // PDF-Download auslösen
-      const blob = await res.blob();
-      const url  = URL.createObjectURL(blob);
-      const a    = document.createElement('a');
-      a.href     = url;
-      a.download = 'linkedin_karussell.pdf';
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
+      // Client-Side PDF-Erzeugung
+      showStatus('Inhalte erhalten – PDF wird im Browser erstellt …', 'info');
+      const pdf = await buildPdfFromHtml(data.slides_html);
+      pdf.save('linkedin_karussell.pdf');
 
       showStatus('✓ PDF wurde heruntergeladen! Jetzt auf LinkedIn hochladen.', 'success');
       setStep(3);
     } catch (e) {
-      showStatus('Verbindungsfehler beim Generieren. Bitte nochmal versuchen.', 'error');
+      showStatus('Fehler beim Generieren. Bitte nochmal versuchen.', 'error');
     } finally {
       setLoading(generateBtn, textEl, false, '✦ Nochmal generieren');
     }

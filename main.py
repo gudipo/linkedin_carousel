@@ -6,14 +6,14 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 load_dotenv()
 
 from generator import check_input, generate_slides
-from renderer import render_to_pdf
+from renderer import render_slide_html
 
 app = FastAPI(title="LinkedIn Karussell Generator")
 
@@ -21,13 +21,13 @@ BASE_DIR = Path(__file__).parent
 LOG_PATH = BASE_DIR / "output" / "usage_log.jsonl"
 
 
-def _log_usage(client: str, topic: str, answers_count: int, pdf_path):
+def _log_usage(client: str, topic: str, slides_count: int):
+    LOG_PATH.parent.mkdir(exist_ok=True)
     entry = {
         "timestamp": datetime.now().isoformat(timespec="seconds"),
         "client": client,
         "topic": topic,
-        "answers_count": answers_count,
-        "pdf_bytes": Path(pdf_path).stat().st_size,
+        "slides_count": slides_count,
     }
     with LOG_PATH.open("a", encoding="utf-8") as f:
         f.write(json.dumps(entry, ensure_ascii=False) + "\n")
@@ -67,14 +67,27 @@ async def generate(
     try:
         slides_json = generate_slides(topic, bullets, extra_answers)
         slides = slides_json["slides"]
-        pdf_path = await render_to_pdf(slides)
-        _log_usage(client, topic, len(extra_answers), pdf_path)
-        return FileResponse(
-            path=pdf_path,
-            media_type="application/pdf",
-            filename="linkedin_karussell.pdf",
-            background=None,
-        )
+
+        # Insight-Zaehler fuer die Nummerierung
+        insight_counter = 0
+        slides_html = []
+        for i, slide in enumerate(slides):
+            if slide["type"] == "insight":
+                insight_counter += 1
+                current_insight = insight_counter
+            else:
+                current_insight = 0
+
+            html = render_slide_html(
+                slide=slide,
+                index=i,
+                total=len(slides),
+                insight_number=current_insight,
+            )
+            slides_html.append(html)
+
+        _log_usage(client, topic, len(slides))
+        return JSONResponse({"slides_html": slides_html})
     except Exception as e:
         traceback.print_exc()
         return JSONResponse({"error": str(e)}, status_code=500)
