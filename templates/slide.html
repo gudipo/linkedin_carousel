@@ -21,7 +21,7 @@
     height: 1080px;
     display: flex;
     flex-direction: column;
-    padding: 72px 80px 56px;
+    padding: 130px 96px 120px;
     position: relative;
     background: #FFFFFF;
   }
@@ -30,7 +30,7 @@
   .progress {
     display: flex;
     gap: 10px;
-    margin-bottom: 48px;
+    margin-bottom: 44px;
   }
   .dot {
     width: 12px;
@@ -51,10 +51,10 @@
 
   /* ── Labels ── */
   .slide-label {
-    font-size: 15px;
+    font-size: 22px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 5px;
+    letter-spacing: 3px;
     color: #009ee3;
     margin-bottom: 24px;
   }
@@ -88,15 +88,15 @@
     color: #04bbee;
   }
   .hook .subtext {
-    font-size: 30px;
-    font-weight: 300;
-    color: rgba(255,255,255,0.90);
+    font-size: 32px;
+    font-weight: 400;
+    color: #FFFFFF;
     line-height: 1.5;
     max-width: 820px;
   }
-  .hook .bottom-bar { border-top-color: rgba(255,255,255,0.15); }
+  .hook .bottom-bar { border-top-color: rgba(255,255,255,0.20); }
   .hook .brand-logo path { fill: #FFFFFF !important; }
-  .hook .bottom-bar .slide-num { color: rgba(255,255,255,0.4); }
+  .hook .bottom-bar .slide-num { color: rgba(255,255,255,0.70); }
 
   /* ══════════════════════════════
      PROBLEM
@@ -111,19 +111,21 @@
   }
   .problem .text {
     font-size: 32px;
-    font-weight: 300;
-    line-height: 1.65;
-    color: #3C3C3C;
+    font-weight: 400;
+    line-height: 1.6;
+    color: #1e295d;
     max-width: 900px;
   }
 
   /* ══════════════════════════════
      INSIGHT
   ══════════════════════════════ */
-  .insight .slide-label { color: #009ee3; }
+  .insight .slide-label { color: #e7177b; }
+  .insight .accent-line { background: linear-gradient(90deg, #e7177b, #951981); }
+  .insight .bullets li::before { background: #e7177b; }
   .insight .title {
     font-family: 'IBM Plex Sans Condensed', 'IBM Plex Sans', Arial, sans-serif;
-    font-size: 64px;
+    font-size: 70px;
     font-weight: 800;
     line-height: 1.05;
     color: #1e295d;
@@ -175,15 +177,15 @@
     max-width: 920px;
   }
   .takeaway .sub {
-    font-size: 30px;
-    font-weight: 300;
+    font-size: 32px;
+    font-weight: 400;
     color: #FFFFFF;
-    line-height: 1.6;
+    line-height: 1.55;
     max-width: 820px;
   }
-  .takeaway .bottom-bar { border-top-color: rgba(255,255,255,0.25); }
+  .takeaway .bottom-bar { border-top-color: rgba(255,255,255,0.30); }
   .takeaway .brand-logo path { fill: #FFFFFF !important; }
-  .takeaway .bottom-bar .slide-num { color: rgba(255,255,255,0.5); }
+  .takeaway .bottom-bar .slide-num { color: rgba(255,255,255,0.75); }
 
   /* ══════════════════════════════
      CTA
@@ -199,10 +201,10 @@
     align-items: flex-start;
   }
   .cta .cta-label {
-    font-size: 15px;
+    font-size: 22px;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 5px;
+    letter-spacing: 3px;
     color: #04bbee;
     margin-bottom: 24px;
   }
@@ -217,27 +219,27 @@
     max-width: 860px;
   }
   .cta .action-pill {
-    background: #009ee3;
+    background: #e7177b;
     border-radius: 100px;
-    padding: 22px 52px;
+    padding: 24px 56px;
     font-size: 28px;
-    font-weight: 600;
+    font-weight: 700;
     color: #FFFFFF;
     margin-bottom: 44px;
     letter-spacing: 0.3px;
   }
   .cta .handle {
-    font-size: 24px;
-    font-weight: 300;
-    color: rgba(255,255,255,0.45);
+    font-size: 28px;
+    font-weight: 400;
+    color: rgba(255,255,255,0.85);
   }
   .cta .handle strong {
     color: #04bbee;
     font-weight: 600;
   }
-  .cta .bottom-bar { border-top-color: rgba(255,255,255,0.15); }
+  .cta .bottom-bar { border-top-color: rgba(255,255,255,0.20); }
   .cta .brand-logo path { fill: #FFFFFF !important; }
-  .cta .bottom-bar .slide-num { color: rgba(255,255,255,0.4); }
+  .cta .bottom-bar .slide-num { color: rgba(255,255,255,0.70); }
 
   /* ── Bottom Bar ── */
   .bottom-bar {
@@ -249,13 +251,13 @@
     margin-top: auto;
   }
   .brand-logo {
-    height: 32px;
+    height: 38px;
     width: auto;
   }
   .slide-num {
-    font-size: 18px;
+    font-size: 22px;
     font-weight: 400;
-    color: #878787;
+    color: #6a6a6a;
   }
 </style>
 </head>
