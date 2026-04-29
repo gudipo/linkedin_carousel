@@ -1,5 +1,3 @@
-import json
-import os
 import traceback
 from datetime import datetime
 from pathlib import Path
@@ -18,19 +16,14 @@ from renderer import render_slide_html
 app = FastAPI(title="LinkedIn Karussell Generator")
 
 BASE_DIR = Path(__file__).parent
-LOG_PATH = BASE_DIR / "output" / "usage_log.jsonl"
 
 
 def _log_usage(client: str, topic: str, slides_count: int):
-    LOG_PATH.parent.mkdir(exist_ok=True)
-    entry = {
-        "timestamp": datetime.now().isoformat(timespec="seconds"),
-        "client": client,
-        "topic": topic,
-        "slides_count": slides_count,
-    }
-    with LOG_PATH.open("a", encoding="utf-8") as f:
-        f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    timestamp = datetime.now().isoformat(timespec="seconds")
+    print(
+        f'[USAGE] {timestamp} | client="{client}" | topic="{topic}" | slides={slides_count}',
+        flush=True,
+    )
 
 app.mount("/static", StaticFiles(directory=str(BASE_DIR / "static")), name="static")
 templates = Jinja2Templates(directory=str(BASE_DIR / "templates"))
