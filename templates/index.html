@@ -30,7 +30,7 @@
             type="text"
             id="client"
             name="client"
-            placeholder="z. B. Müller GmbH, Projekt Alpha …"
+            placeholder="z. B. Kevin, Diana, …"
             required
           >
         </div>
@@ -149,9 +149,10 @@
 
   // ── Check ──
   async function doCheck(isRecheck = false) {
+    const client  = document.getElementById('client').value.trim();
     const topic   = document.getElementById('topic').value.trim();
     const bullets = document.getElementById('bullets').value.trim();
-    if (!topic || !bullets) { showStatus('Bitte Thema und Stichpunkte ausfüllen.', 'error'); return; }
+    if (!client || !topic || !bullets) { showStatus('Bitte Kunde / Projekt, Thema und Stichpunkte ausfüllen.', 'error'); return; }
 
     const btn    = isRecheck ? recheckBtn : checkBtn;
     const textEl = btn.querySelector('span');
