@@ -152,7 +152,7 @@
     const client  = document.getElementById('client').value.trim();
     const topic   = document.getElementById('topic').value.trim();
     const bullets = document.getElementById('bullets').value.trim();
-    if (!client || !topic || !bullets) { showStatus('Bitte Name, Thema und Stichpunkte ausfüllen.', 'error'); return; }
+    if (!client || !topic || !bullets) { showStatus('Bitte Dein Name, Thema und Stichpunkte ausfüllen.', 'error'); return; }
 
     const btn    = isRecheck ? recheckBtn : checkBtn;
     const textEl = btn.querySelector('span');
