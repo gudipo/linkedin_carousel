@@ -24,8 +24,8 @@
 
     <div class="card">
       <form id="main-form">
-        <div class="field">
-          <label for="client">Dein Name</label>
+        <div class="field" id="field-client">
+          <label for="client">Dein Name <span class="required">*</span></label>
           <input
             type="text"
             id="client"
@@ -35,8 +35,8 @@
           >
         </div>
 
-        <div class="field">
-          <label for="topic">Thema</label>
+        <div class="field" id="field-topic">
+          <label for="topic">Thema <span class="required">*</span></label>
           <input
             type="text"
             id="topic"
@@ -46,8 +46,8 @@
           >
         </div>
 
-        <div class="field">
-          <label for="bullets">Stichpunkte & Kernaussagen</label>
+        <div class="field" id="field-bullets">
+          <label for="bullets">Stichpunkte & Kernaussagen <span class="required">*</span></label>
           <textarea
             id="bullets"
             name="bullets"
@@ -147,12 +147,45 @@
     followupSection.style.display = 'block';
   }
 
+  // ── Validation ──
+  const requiredFields = [
+    { id: 'client',  fieldId: 'field-client'  },
+    { id: 'topic',   fieldId: 'field-topic'   },
+    { id: 'bullets', fieldId: 'field-bullets' },
+  ];
+
+  function validateRequired() {
+    let firstInvalid = null;
+    requiredFields.forEach(({ id, fieldId }) => {
+      const value = document.getElementById(id).value.trim();
+      const field = document.getElementById(fieldId);
+      if (!value) {
+        field.classList.add('invalid');
+        if (!firstInvalid) firstInvalid = document.getElementById(id);
+      } else {
+        field.classList.remove('invalid');
+      }
+    });
+    if (firstInvalid) {
+      firstInvalid.focus();
+      return false;
+    }
+    return true;
+  }
+
+  requiredFields.forEach(({ id, fieldId }) => {
+    document.getElementById(id).addEventListener('input', () => {
+      const field = document.getElementById(fieldId);
+      if (document.getElementById(id).value.trim()) field.classList.remove('invalid');
+    });
+  });
+
   // ── Check ──
   async function doCheck(isRecheck = false) {
+    if (!validateRequired()) return;
     const client  = document.getElementById('client').value.trim();
     const topic   = document.getElementById('topic').value.trim();
     const bullets = document.getElementById('bullets').value.trim();
-    if (!client || !topic || !bullets) { showStatus('Bitte Dein Name, Thema und Stichpunkte ausfüllen.', 'error'); return; }
 
     const btn    = isRecheck ? recheckBtn : checkBtn;
     const textEl = btn.querySelector('span');

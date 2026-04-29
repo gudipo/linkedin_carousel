@@ -89,6 +89,20 @@ textarea:focus {
 }
 textarea { min-height: 100px; }
 
+.required {
+  color: var(--pink-light);
+  margin-left: 2px;
+  font-weight: 700;
+}
+.field.invalid input[type="text"],
+.field.invalid textarea {
+  border-color: var(--pink-light);
+  box-shadow: 0 0 0 3px rgba(215,23,132,0.15);
+}
+.field.invalid label {
+  color: var(--pink-light);
+}
+
 /* Follow-up Questions */
 #followup-section {
   display: none;
