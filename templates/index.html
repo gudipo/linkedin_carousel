@@ -66,7 +66,7 @@
           <div id="questions-container"></div>
 
           <button type="button" class="btn btn-primary" id="recheck-btn" style="margin-top:8px;">
-            <span id="recheck-btn-text">Antworten prüfen</span>
+            <span id="recheck-btn-text">Antworten übernehmen</span>
           </button>
         </div>
 
@@ -180,25 +180,32 @@
     });
   });
 
+  function showReadyState(message) {
+    followupSection.style.display = 'none';
+    checkBtn.style.display = 'none';
+    generateBtn.style.display = 'block';
+    showStatus(message, 'success');
+    setStep(3);
+  }
+
   // ── Check ──
   async function doCheck(isRecheck = false) {
     if (!validateRequired()) return;
-    const client  = document.getElementById('client').value.trim();
+
+    // Recheck: keine erneute API-Pruefung. Antworten uebernehmen und direkt zum Generieren.
+    if (isRecheck) {
+      extraAnswers = extraAnswers.concat(collectCurrentAnswers());
+      showReadyState('Antworten übernommen – jetzt PDF generieren!');
+      return;
+    }
+
     const topic   = document.getElementById('topic').value.trim();
     const bullets = document.getElementById('bullets').value.trim();
 
-    const btn    = isRecheck ? recheckBtn : checkBtn;
-    const textEl = btn.querySelector('span');
-    const label  = isRecheck ? 'Antworten prüfen' : 'Weiter → Prüfen';
-
-    setLoading(btn, textEl, true, 'Prüfe …');
+    const textEl = checkBtn.querySelector('span');
+    setLoading(checkBtn, textEl, true, 'Prüfe …');
     hideStatus();
     generateBtn.style.display = 'none';
-
-    if (isRecheck) {
-      const newAnswers = collectCurrentAnswers();
-      extraAnswers = extraAnswers.concat(newAnswers);
-    }
 
     const body = new FormData();
     body.append('topic', topic);
@@ -212,11 +219,7 @@
       if (data.error) { showStatus('Fehler: ' + data.error, 'error'); return; }
 
       if (data.ready) {
-        followupSection.style.display = 'none';
-        checkBtn.style.display = 'none';
-        generateBtn.style.display = 'block';
-        showStatus('Super! Genug Infos – jetzt können Sie das PDF generieren.', 'success');
-        setStep(3);
+        showReadyState('Super! Genug Infos – jetzt PDF generieren.');
       } else {
         renderQuestions(data.missing_info);
         showStatus('Beantworte die Fragen, damit das Karussell richtig gut wird.', 'info');
@@ -225,7 +228,7 @@
     } catch (e) {
       showStatus('Verbindungsfehler. Bitte nochmal versuchen.', 'error');
     } finally {
-      setLoading(btn, textEl, false, label);
+      setLoading(checkBtn, textEl, false, 'Weiter → Prüfen');
     }
   }
 
