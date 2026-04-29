@@ -25,7 +25,7 @@
     <div class="card">
       <form id="main-form">
         <div class="field">
-          <label for="client">Kunde / Projekt</label>
+          <label for="client">Dein Name</label>
           <input
             type="text"
             id="client"
@@ -152,7 +152,7 @@
     const client  = document.getElementById('client').value.trim();
     const topic   = document.getElementById('topic').value.trim();
     const bullets = document.getElementById('bullets').value.trim();
-    if (!client || !topic || !bullets) { showStatus('Bitte Kunde / Projekt, Thema und Stichpunkte ausfüllen.', 'error'); return; }
+    if (!client || !topic || !bullets) { showStatus('Bitte Name, Thema und Stichpunkte ausfüllen.', 'error'); return; }
 
     const btn    = isRecheck ? recheckBtn : checkBtn;
     const textEl = btn.querySelector('span');
